@@ -1,0 +1,227 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://galva.io/crossPlatform/0.1.0/schema"
+title: "Galva Cross Platform Format"
+description: >
+  The protocol between the Dart API and the native plugins, as in Adapty's cross-platform format.
+  Dart calls a method on the `flutter.galva.io/galva` channel with the method name and a JSON
+  string of arguments; the native side answers with a JSON string: `{"success": <value>}` or
+  `{"error": <GalvaError>}`. Native events reach Dart as calls on the same channel, named after
+  the event, with a JSON string argument. Keep this file, lib/src/constants and both native
+  `GalvaCrossplatform` implementations in step.
+
+$requests:
+  ### configure ###
+  Configure.Request:
+    type: object
+    required: [configuration]
+    properties:
+      configuration: { $ref: "#/$defs/GalvaConfiguration" }
+  Configure.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### is_configured ###
+  IsConfigured.Request: { type: object }
+  IsConfigured.Response: { $ref: "#/$defs/Response.Bool" }
+
+  ### set_log_level ###
+  SetLogLevel.Request:
+    type: object
+    required: [value]
+    properties:
+      value: { $ref: "#/$defs/GalvaLogLevel" }
+  SetLogLevel.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### identify ###
+  Identify.Request:
+    type: object
+    required: [user_id]
+    properties:
+      user_id: { type: string }
+      email: { type: string }
+      android_obfuscated_account_id: { type: string, description: "Android only" }
+      ios_app_account_token: { type: string, format: uuid, description: "iOS only" }
+  Identify.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### logout ###
+  Logout.Request: { type: object }
+  Logout.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### get_identified_user_id ###
+  GetIdentifiedUserId.Request: { type: object }
+  GetIdentifiedUserId.Response:
+    oneOf:
+      - required: [error]
+        properties: { error: { $ref: "#/$defs/GalvaError" } }
+      - required: [success]
+        properties: { success: { type: [string, "null"] } }
+
+  ### set_attributes ###
+  SetAttributes.Request:
+    type: object
+    required: [attributes]
+    properties:
+      attributes: { $ref: "#/$defs/GalvaUserAttributes" }
+  SetAttributes.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### track ###
+  Track.Request:
+    type: object
+    required: [event_name]
+    properties:
+      event_name: { type: string }
+      attributes: { $ref: "#/$defs/JsonObject" }
+  Track.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### set_opt_out / is_opted_out ###
+  SetOptOut.Request:
+    type: object
+    required: [value]
+    properties:
+      value: { type: boolean }
+  SetOptOut.Response: { $ref: "#/$defs/Response.Void" }
+  IsOptedOut.Request: { type: object }
+  IsOptedOut.Response: { $ref: "#/$defs/Response.Bool" }
+
+  ### check_for_messages ###
+  CheckForMessages.Request: { type: object }
+  CheckForMessages.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### show_message ###
+  ShowMessage.Request:
+    type: object
+    required: [message]
+    properties:
+      message: { $ref: "#/$defs/GalvaInAppMessage" }
+  ShowMessage.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### handle_open_url ###
+  HandleOpenUrl.Request:
+    type: object
+    required: [url]
+    properties:
+      url: { type: string }
+  HandleOpenUrl.Response: { $ref: "#/$defs/Response.Bool" }
+
+  ### set_push_token (Android) ###
+  SetPushToken.Request:
+    type: object
+    required: [token]
+    properties:
+      token: { type: string }
+      provider: { $ref: "#/$defs/GalvaPushProvider" }
+  SetPushToken.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### set_apns_token (iOS) ###
+  SetApnsToken.Request:
+    type: object
+    required: [token]
+    properties:
+      token: { type: string, description: "The APNs device token, hex-encoded" }
+  SetApnsToken.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### clear_push_token (Android) ###
+  ClearPushToken.Request: { type: object }
+  ClearPushToken.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### is_galva_notification / handle_push (Android) ###
+  IsGalvaNotification.Request:
+    type: object
+    required: [data]
+    properties:
+      data: { type: object, additionalProperties: { type: string } }
+  IsGalvaNotification.Response: { $ref: "#/$defs/Response.Bool" }
+  HandlePush.Request:
+    type: object
+    required: [data]
+    properties:
+      data: { type: object, additionalProperties: { type: string } }
+  HandlePush.Response: { $ref: "#/$defs/Response.Void" }
+
+  ### reconcile_transactions ###
+  ReconcileTransactions.Request: { type: object }
+  ReconcileTransactions.Response: { $ref: "#/$defs/Response.Void" }
+
+$events:
+  InAppMessageReceived: # in_app_message_received
+    type: object
+    required: [message]
+    properties:
+      message: { $ref: "#/$defs/GalvaInAppMessage" }
+
+$defs:
+  Response.Void:
+    oneOf:
+      - required: [error]
+        properties: { error: { $ref: "#/$defs/GalvaError" } }
+      - required: [success]
+        properties: { success: { const: true } }
+
+  Response.Bool:
+    oneOf:
+      - required: [error]
+        properties: { error: { $ref: "#/$defs/GalvaError" } }
+      - required: [success]
+        properties: { success: { type: boolean } }
+
+  JsonObject:
+    type: object
+    additionalProperties: true
+
+  GalvaError:
+    type: object
+    required: [code, message]
+    properties:
+      code: { type: integer, description: "See GalvaErrorCode" }
+      message: { type: string }
+      detail: { type: string }
+
+  GalvaLogLevel:
+    type: string
+    enum: [none, error, warn, info, debug, verbose]
+
+  GalvaEnvironment:
+    type: object
+    required: [type]
+    properties:
+      type: { type: string, enum: [production, development, custom] }
+      api_url: { type: string, description: "custom only" }
+      webview_url: { type: string, description: "custom only; must end with /" }
+
+  GalvaConfiguration:
+    type: object
+    required: [api_key]
+    properties:
+      api_key: { type: string }
+      environment: { $ref: "#/$defs/GalvaEnvironment" }
+      log_level: { $ref: "#/$defs/GalvaLogLevel" }
+      in_app_messages: { type: string, enum: [automatic, manual] }
+      auto_track_sessions: { type: boolean }
+      ios_apple_search_ads: { type: boolean, description: "iOS only" }
+      wrapper: { $ref: "#/$defs/GalvaWrapper" }
+
+  GalvaWrapper:
+    type: object
+    required: [name, version]
+    properties:
+      name: { type: string, description: "e.g. flutter" }
+      version: { type: string }
+
+  GalvaUserAttributes:
+    type: object
+    properties:
+      email: { type: string }
+      first_name: { type: string }
+      last_name: { type: string }
+      full_name: { type: string }
+      custom: { $ref: "#/$defs/JsonObject" }
+
+  GalvaInAppMessage:
+    type: object
+    required: [id]
+    properties:
+      id: { type: string }
+      workflow_type: { type: string, description: "trial-rescue, cancellation-recovery, winback, payment-recovery or a newer type" }
+      created_at: { type: string, format: date-time }
+
+  GalvaPushProvider:
+    type: string
+    enum: [fcm, hms, adm]
