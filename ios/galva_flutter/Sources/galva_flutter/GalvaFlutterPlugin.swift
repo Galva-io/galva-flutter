@@ -9,6 +9,7 @@ public final class GalvaFlutterPlugin: NSObject, FlutterPlugin {
 
     private let crossplatform: GalvaCrossplatform
 
+    @MainActor
     private init(channel: FlutterMethodChannel) {
         crossplatform = GalvaCrossplatform { event, json in
             channel.invokeMethod(event, arguments: json)
@@ -17,7 +18,8 @@ public final class GalvaFlutterPlugin: NSObject, FlutterPlugin {
 
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
-        let instance = GalvaFlutterPlugin(channel: channel)
+        // Flutter registers plugins on the main thread.
+        let instance = MainActor.assumeIsolated { GalvaFlutterPlugin(channel: channel) }
         registrar.addMethodCallDelegate(instance, channel: channel)
         registrar.addApplicationDelegate(instance)
     }

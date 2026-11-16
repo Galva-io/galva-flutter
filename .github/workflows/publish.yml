@@ -1,0 +1,47 @@
+name: Publish to pub.dev
+
+# pub.dev accepts automated uploads only from a workflow that a tag push started, and only for
+# tags matching the pattern set on the package's admin page (v{{version}}). release.yml pushes
+# the tag after a merge to main; pushing a tag by hand works too.
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Must match "Require GitHub Actions environment" on pub.dev.
+    environment: pub.dev
+    permissions:
+      contents: read
+      id-token: write # pub.dev authenticates the upload with the workflow's OIDC token
+    steps:
+      - uses: actions/checkout@v5
+      # Fetches the OIDC token and registers it for pub.dev; flutter pub reads the same token.
+      - uses: dart-lang/setup-dart@v1
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: The tag matches pubspec.yaml
+        run: .github/scripts/check_version.sh "${GITHUB_REF_NAME#v}"
+      - name: Is the version on pub.dev already?
+        id: published
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if curl -sf -o /dev/null "https://pub.dev/api/packages/galva_flutter/versions/$version"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$version is already on pub.dev (uploaded by hand?): nothing to publish." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.published.outputs.exists == 'false'
+        run: flutter pub get
+      - name: Publish
+        if: steps.published.outputs.exists == 'false'
+        run: flutter pub publish --force

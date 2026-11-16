@@ -77,7 +77,8 @@ class Galva {
   /// restored session.
   ///
   /// [email] is checked on the device and dropped when invalid. [androidObfuscatedAccountId] is
-  /// the obfuscated account ID your own Play Billing code sets. [iosAppAccountToken] is the
+  /// the obfuscated account ID your own Play Billing code sets; it's dropped when blank, over 64
+  /// characters or an email address, and the current ID is kept. [iosAppAccountToken] is the
   /// StoreKit app account token (a UUID) your own purchases carry.
   Future<void> identify(
     String userId, {

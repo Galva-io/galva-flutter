@@ -14,8 +14,9 @@ let package = Package(
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
         // The native Galva SDK, distributed through Swift Package Manager only. It needs Xcode 26
-        // or later. Up to the next major version: the bridge uses its public API alone.
-        .package(url: "https://github.com/Galva-io/galva-ios.git", from: "1.0.0"),
+        // or later. Pinned like galva-sdk on Android, so each plugin version ships one tested
+        // pair of native SDKs; raise it together with the versions table in README.md.
+        .package(url: "https://github.com/Galva-io/galva-ios.git", exact: "1.0.0"),
     ],
     targets: [
         .target(

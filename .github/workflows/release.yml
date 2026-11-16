@@ -1,0 +1,56 @@
+name: Release
+
+# On every merge to main: run CI, then tag v<version> from pubspec.yaml unless that tag exists.
+# The tag starts publish.yml, which uploads the version to pub.dev (or skips it when it's already
+# there, as the first version is, uploaded by hand). A merge that doesn't change the version tags
+# nothing.
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  tag:
+    name: Tag the version
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      # The tag is pushed with a deploy key: a tag pushed with GITHUB_TOKEN wouldn't start
+      # publish.yml.
+      - uses: actions/checkout@v5
+        with:
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+
+      - name: Read the version
+        id: version
+        run: |
+          .github/scripts/check_version.sh
+          version=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | tr -d '"'"'"' \r')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "v$version is already tagged: nothing to release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push the tag
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "v$VERSION" -m "galva_flutter $VERSION"
+          git push origin "v$VERSION"
+          echo "Tagged v$VERSION: publish.yml uploads it to pub.dev." >> "$GITHUB_STEP_SUMMARY"

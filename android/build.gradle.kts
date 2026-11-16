@@ -1,5 +1,5 @@
 group = "io.galva.flutter"
-version = "0.1.0"
+version = "1.0.0"
 
 buildscript {
     val kotlinVersion = "2.4.0"
@@ -55,7 +55,7 @@ kotlin {
 
 dependencies {
     // The native Galva SDK, from Maven Central. The plugin only uses its public API (io.galva.sdk).
-    implementation("io.galva.sdk:galva-sdk:1.3.0")
+    implementation("io.galva.sdk:galva-sdk:1.5.0")
     // galva-sdk runs offer purchases through Play Billing but leaves the library to the app;
     // a Flutter app has no Android build file of its own to add it to, so the plugin brings it.
     implementation("com.android.billingclient:billing-ktx:8.0.0")

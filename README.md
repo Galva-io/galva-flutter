@@ -2,7 +2,11 @@
 
 Connects your Flutter app to [Galva](https://galva.io): Galva decides which subscribers need a nudge (failed renewals, trials about to end, users about to churn) and reaches them with in-app messages, push notifications and emails.
 
-The plugin wraps the native Galva SDKs: `io.galva.sdk:galva-sdk` 1.3.0 on Android and [galva-ios](https://github.com/Galva-io/galva-ios) 1.x on iOS.
+The plugin wraps the native Galva SDKs, pinned to one version each:
+
+| galva_flutter | Android: [`io.galva.sdk:galva-sdk`](https://central.sonatype.com/artifact/io.galva.sdk/galva-sdk) | iOS: [galva-ios](https://github.com/Galva-io/galva-ios) |
+| --- | --- | --- |
+| 1.0.0 | 1.5.0 | 1.0.0 |
 
 **Requirements:** Flutter 3.32+, Android minSdk 24 with Kotlin 2.1+ (Flutter's current templates use 2.4), iOS 15+ built with Xcode 26+ and Swift Package Manager.
 
@@ -12,7 +16,7 @@ The plugin wraps the native Galva SDKs: `io.galva.sdk:galva-sdk` 1.3.0 on Androi
 
 ```yaml
 dependencies:
-  galva_flutter: ^0.1.0
+  galva_flutter: ^1.0.0
 ```
 
 **Android.** Raise `minSdk` to 24 in `android/app/build.gradle.kts` if it's lower. The plugin brings the Galva SDK and Google Play Billing 8 from Maven Central.

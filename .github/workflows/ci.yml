@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  # release.yml runs these checks before tagging a version.
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  dart:
+    name: Analyze, test, publish dry run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Versions agree
+        run: .github/scripts/check_version.sh
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Example tests
+        working-directory: example
+        run: flutter test
+      - name: pub.dev dry run
+        run: flutter pub publish --dry-run
+
+  android:
+    name: Build example (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Build APK
+        working-directory: example
+        run: flutter build apk --debug
+
+  ios:
+    name: Build example (iOS)
+    # galva-ios needs Xcode 26 or later.
+    runs-on: macos-26
+    steps:
+      # Flutter names the plugin's Swift package after this folder, and Xcode refuses the package
+      # when that name isn't the plugin's (galva_flutter), so don't check out into galva-flutter.
+      - uses: actions/checkout@v5
+        with:
+          path: galva_flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter config --enable-swift-package-manager
+      - name: Build for the simulator
+        working-directory: galva_flutter/example
+        run: flutter build ios --simulator --debug
