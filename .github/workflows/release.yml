@@ -1,9 +1,12 @@
 name: Release
 
-# On every merge to main: run CI, then tag v<version> from pubspec.yaml unless that tag exists.
-# The tag starts publish.yml, which uploads the version to pub.dev (or skips it when it's already
-# there, as the first version is, uploaded by hand). A merge that doesn't change the version tags
-# nothing.
+# On every merge to main: run CI, then, unless pubspec.yaml's version is tagged already, tag it
+# (the tag is the bare version, 1.2.3, matching the {{version}} tag pattern set on pub.dev) and
+# start publish.yml on that tag. A merge that doesn't change the version releases nothing.
+#
+# Needs no secret: the tag is pushed with GITHUB_TOKEN. Such a push doesn't start other
+# workflows, so publish.yml is started explicitly with workflow_dispatch, which pub.dev accepts
+# from a tag ref.
 
 on:
   push:
@@ -20,16 +23,15 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
 
-  tag:
-    name: Tag the version
+  release:
+    name: Tag and publish
     needs: ci
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the tag
+      actions: write # start publish.yml
     steps:
-      # The tag is pushed with a deploy key: a tag pushed with GITHUB_TOKEN wouldn't start
-      # publish.yml.
       - uses: actions/checkout@v5
-        with:
-          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - name: Read the version
         id: version
@@ -37,9 +39,9 @@ jobs:
           .github/scripts/check_version.sh
           version=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | tr -d '"'"'"' \r')
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+          if git ls-remote --exit-code --tags origin "refs/tags/$version" > /dev/null; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "v$version is already tagged: nothing to release."
+            echo "$version is already tagged: nothing to release."
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
@@ -51,6 +53,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "v$VERSION" -m "galva_flutter $VERSION"
-          git push origin "v$VERSION"
-          echo "Tagged v$VERSION: publish.yml uploads it to pub.dev." >> "$GITHUB_STEP_SUMMARY"
+          git tag -a "$VERSION" -m "galva_flutter $VERSION"
+          git push origin "refs/tags/$VERSION"
+
+      - name: Start publish.yml on the tag
+        if: steps.version.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref "refs/tags/$VERSION"
+          echo "Tagged $VERSION and started publish.yml, which uploads it to pub.dev." >> "$GITHUB_STEP_SUMMARY"
