@@ -11,6 +11,11 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+*"
   workflow_dispatch:
 
+env:
+  # Pinned so a new Flutter release can't break a merge to main, which releases. Raise it on
+  # purpose, in ci.yml and publish.yml together.
+  FLUTTER_VERSION: "3.50.0"
+
 permissions:
   contents: read
 
@@ -31,6 +36,7 @@ jobs:
       - uses: dart-lang/setup-dart@v1
       - uses: subosito/flutter-action@v2
         with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
       - name: The tag matches pubspec.yaml

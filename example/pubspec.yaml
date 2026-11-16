@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
   galva_flutter:
     path: ../
+  # Flutter's Material widgets, which moved out of package:flutter (deprecated there since 3.47).
+  material_ui: ^1.11.0
 
 dev_dependencies:
   flutter_test:
