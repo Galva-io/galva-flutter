@@ -105,7 +105,9 @@ internal class GalvaCrossplatform(
     private fun configure(json: JSONObject) {
         val inAppMessages = json.optStringOrNull("in_app_messages") ?: "automatic"
         Galva.configure(
-            context,
+            // Dart configures once MainActivity is already on screen, so the SDK never sees that
+            // activity resume; passing it lets automatic in-app messages show on it right away.
+            currentActivity() ?: context,
             Configuration(
                 apiKey = json.getString("api_key"),
                 logLevel = logLevel(json.optStringOrNull("log_level") ?: "warn"),
