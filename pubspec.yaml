@@ -1,6 +1,6 @@
 name: galva_flutter
 description: Galva SDK for Flutter. Identify subscribers, track events, and show Galva's in-app messages, push notifications and offer links in iOS and Android apps.
-version: 1.1.0
+version: 1.1.1
 homepage: https://galva.io
 repository: https://github.com/Galva-io/galva-flutter
 issue_tracker: https://github.com/Galva-io/galva-flutter/issues

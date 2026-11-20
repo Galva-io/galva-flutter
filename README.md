@@ -6,6 +6,7 @@ The plugin wraps the native Galva SDKs, pinned to one version each:
 
 | galva_flutter | Android: [`io.galva.sdk:galva-sdk`](https://central.sonatype.com/artifact/io.galva.sdk/galva-sdk) | iOS: [galva-ios](https://github.com/Galva-io/galva-ios) |
 | --- | --- | --- |
+| 1.1.1 | 1.5.2 | 1.0.0 |
 | 1.1.0 | 1.5.1 | 1.0.0 |
 | 1.0.0 | 1.5.0 | 1.0.0 |
 
@@ -17,7 +18,7 @@ The plugin wraps the native Galva SDKs, pinned to one version each:
 
 ```yaml
 dependencies:
-  galva_flutter: ^1.1.0
+  galva_flutter: ^1.1.1
 ```
 
 **Android.** Raise `minSdk` to 24 in `android/app/build.gradle.kts` if it's lower. The plugin brings the Galva SDK and Google Play Billing 8 from Maven Central.
